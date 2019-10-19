@@ -60,3 +60,8 @@ test("Test Elevator.UnAssignPassenger", function () {
   elevator.UnAssignPassenger(passenger3)
   expect(elevator.assignedPassengers).toEqual([passenger1, passenger2, passenger4])
 })
+
+test("Test Elevator.GetTimeToPassenger", function () {
+  // TODO: create test for Elevator.GetTimeToPassenger before implementing it
+  expect(1).toEqual(0)
+})
