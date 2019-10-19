@@ -38,7 +38,7 @@ export default class Elevator {
    * @param passenger {Passenger}
    */
   AssignPassenger(passenger) {
-    
+    this.assignedPassengers.push(passenger)
   }
   
   /**
