@@ -31,10 +31,21 @@ export default class Elevator {
    */
   GetTimeToPassenger(passenger) {
     if (this.CanPickUpPassenger(passenger)) {
-      return
+      /**
+       * Calculate time for the case when elevator doesn't have to return for the passenger.
+       * (|elevator.currentFloor - passenger.currentFloor|) / elevator.speed +
+       * elevator.remainingStopFloors.filter(
+       *   stopFloor => stopFloor !== passenger.currentFloor && stopFloor < passenger.destinationFloor
+       * ).length * elevatorStopTime
+       */
+      // the floor of the passenger should be excluded from the calculations(the previous floor should be included)
+      const floorBeforePassengerCurrentFloor = passenger.currentFloor -
+        Direction.Calculate(this.currentFloor, passenger.currentFloor)
+      return Math.abs(this.currentFloor - passenger.currentFloor) / this.speed +
+        this.GetNumberOfStopsBetweenFloors(this.currentFloor, floorBeforePassengerCurrentFloor) * this.averageStopTime
     }
     /**
-     * Elevator finishes current delivery, then returns to the passenger.
+     * Calculate time for the case when elevator finishes current delivery, then returns to the passenger.
      * |elevator.destinationFloor - elevator.currentFloor| + |elevator.destinationFloor - passenger.currentFloor|) /
      * elevator.speed + elevator.remainingStopFloors.length * elevator.averageStopTime
      */
@@ -46,21 +57,30 @@ export default class Elevator {
   
   /**
    * Returns how many times the elevator has to stop between two floors based on the destination floors of the assigned
-   * passengers. The startFloor and endFloor are included.
+   * passengers.
+   * The startFloor and endFloor are included.
+   * If multiple passengers go to the same floor it still counts for a single stop.
    * @param startFloor {int}
    * @param endFloor {int}
    * @returns {number}
    */
   GetNumberOfStopsBetweenFloors(startFloor, endFloor) {
-    return this.assignedPassengers.reduce((stops, passenger) => {
-      if ((passenger.destinationFloor - startFloor) * (passenger.destinationFloor - endFloor) <= 0) ++stops
-      return stops
-    }, 0)
+    return this.assignedPassengers.reduce(({stops, destinationFloors}, passenger) => {
+      if (
+        !destinationFloors[passenger.destinationFloor] &&
+        (passenger.destinationFloor - startFloor) * (passenger.destinationFloor - endFloor) <= 0
+      ) {
+        ++stops
+        destinationFloors[passenger.destinationFloor] = true
+      }
+      
+      return {stops, destinationFloors}
+    }, {stops: 0, destinationFloors: {}}).stops
   }
   
   /**
    * An elevator can pick-up a passenger if:
-   * - elevator is in STAND-BY
+   * - elevator is in stand-by
    * - or elevator moves into the passenger's direction and:
    *  - the elevator won't pass the passenger's floor
    *  - or the elevator will pass the passenger's floor and the passenger wants to move in the elevator's delivery
