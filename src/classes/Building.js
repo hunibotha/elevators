@@ -32,10 +32,7 @@ export default class Building {
    * @param passenger {Passenger}
    */
   AddPassenger(passenger) {
-    /*this.passengers = [
-        ...this.passengers,
-        passenger
-    ]*/
+    this.passengers.push(passenger)
   }
   
   get averageElevatorStopTime() {
