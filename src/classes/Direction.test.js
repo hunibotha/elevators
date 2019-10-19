@@ -20,7 +20,7 @@ test("Test Direction.Calculate", function () {
   ]
   
   testCases.forEach(({startFloor, destinationFloor, expected}) => {
-    const output = Direction.Calculate(startFloor, destinationFloor);
-    expect(output).toEqual(expected);
+    const output = Direction.Calculate(startFloor, destinationFloor)
+    expect(output).toEqual(expected)
   })
 })
