@@ -31,5 +31,5 @@ test("Test Building.RemovePassenger", function () {
 test("Test Building.CallElevatorForPassenger", function () {
   
   // TODO: write test before implementing this function
-  expect(1).toEqual0)
+  expect(1).toEqual(0)
 })
