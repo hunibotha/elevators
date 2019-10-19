@@ -25,7 +25,34 @@ export default class Elevator {
   }
   
   /**
-   * Returns how many seconds it takes for the elevator to get to the specified passenger.
+   * Calculates how many seconds would take for the elevator to get to the specified passenger and deliver it to the
+   * desired destination.
+   * @param passenger {Passenger}
+   * @returns {number}
+   */
+  GetTotalDeliveryTimeForPassenger(passenger) {
+    return this.GetTimeToPassenger(passenger) + this.averageStopTime + this.GetDeliveryTimeForPassenger(passenger)
+  }
+  
+  /**
+   * Calculates how many seconds would take for the elevator to deliver the specified passenger from the passenger's
+   * current floor to the passenger's desired destination.
+   * @param passenger {Passenger}
+   * @returns {int}
+   */
+  GetDeliveryTimeForPassenger(passenger) {
+    /**
+     * Delivery time = (|passenger.destinationFloor - passenger.currentFloor|) / elevator.speed + (nr of stops between
+     *  passenger.currentFloor and passenger.destinationFloor) * elevator.averageStopTime
+     */
+      // the stops on the current floor shouldn't be included
+    const floorAfterPassengerCurrentFloor = passenger.currentFloor + passenger.direction
+    return Math.abs(passenger.destinationFloor - passenger.currentFloor) / this.speed +
+      this.GetNumberOfStopsBetweenFloors(floorAfterPassengerCurrentFloor, passenger.destinationFloor) * this.averageStopTime
+  }
+  
+  /**
+   * Calculates how many seconds would take for the elevator to get to the specified passenger.
    * @param passenger {Passenger}
    * @returns {int}
    */
@@ -38,7 +65,7 @@ export default class Elevator {
        *   stopFloor => stopFloor !== passenger.currentFloor && stopFloor < passenger.destinationFloor
        * ).length * elevatorStopTime
        */
-      // the floor of the passenger should be excluded from the calculations(the previous floor should be included)
+        // the floor of the passenger should be excluded from the calculations(the previous floor should be included)
       const floorBeforePassengerCurrentFloor = passenger.currentFloor -
         Direction.Calculate(this.currentFloor, passenger.currentFloor)
       return Math.abs(this.currentFloor - passenger.currentFloor) / this.speed +
