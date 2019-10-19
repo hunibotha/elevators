@@ -35,6 +35,14 @@ export default class Building {
     this.passengers.push(passenger)
   }
   
+  /**
+   * Remove a passenger from the building.
+   * @param removedPassenger {Passenger}
+   */
+  RemovePassenger(removedPassenger) {
+    this.passengers = this.passengers.filter(({id}) => id !== removedPassenger.id)
+  }
+  
   get averageElevatorStopTime() {
     return DEFAULT_AVERAGE_ELEVATOR_STOP_TIME_S
   }
