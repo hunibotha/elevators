@@ -20,10 +20,10 @@ export default class Passenger {
   
   /**
    * Gets the direction the passenger is heading to.
-   * @returns {Direction.UP | Direction.NO_DIRECTION | Direction.DOWN}
+   * @returns {Direction.DIRECTIONS}
    */
   get direction() {
-    return Direction.Calculate(this.destinationFloor, this.currentFloor)
+    return Direction.Calculate(this.currentFloor, this.destinationFloor)
   }
   
   /**

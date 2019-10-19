@@ -55,10 +55,10 @@ export default class Elevator {
   
   /**
    * Gets the direction the elevator is currently heading to.
-   * @returns {Direction.UP | Direction.NO_DIRECTION | Direction.DOWN}
+   * @returns {Direction.DIRECTIONS}
    */
   get direction() {
-    return Direction.Calculate(this.destinationFloor, this.currentFloor)
+    return Direction.Calculate(this.currentFloor, this.destinationFloor)
   }
   
   /**
