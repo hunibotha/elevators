@@ -27,3 +27,9 @@ test("Test Building.RemovePassenger", function () {
   building.RemovePassenger(passenger4)
   expect(building.passengers).toEqual([passenger1, passenger2, passenger3])
 })
+
+test("Test Building.CallElevatorForPassenger", function () {
+  
+  // TODO: write test before implementing this function
+  expect(1).toEqual0)
+})
