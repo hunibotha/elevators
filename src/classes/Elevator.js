@@ -66,7 +66,7 @@ export default class Elevator {
    * @returns {string}
    */
   get id() {
-    return ""
+    return this._id
   }
   
   /**

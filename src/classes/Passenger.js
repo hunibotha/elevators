@@ -31,7 +31,7 @@ export default class Passenger {
    * @returns {string}
    */
   get id() {
-    return ""
+    return this._id
   }
   
   /**
