@@ -46,7 +46,7 @@ export default class Elevator {
    * @param passengers {[Passenger]}
    */
   AssignPassengers(passengers) {
-  
+    this._assignedPassengers = this.assignedPassengers.concat(passengers)
   }
   
   get speed() {

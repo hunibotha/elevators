@@ -17,3 +17,15 @@ test("Test Elevator.AssignPassenger", function () {
   elevator.AssignPassenger(passenger4)
   expect(elevator.assignedPassengers).toEqual([passenger1, passenger2, passenger3, passenger4])
 })
+
+test("Test Elevator.AssignPassengers", function () {
+  const elevator = new Elevator(
+    undefined,
+    undefined,
+    undefined,
+    [passenger1, passenger2]
+  )
+  
+  elevator.AssignPassengers([passenger3, passenger4])
+  expect(elevator.assignedPassengers).toEqual([passenger1, passenger2, passenger3, passenger4])
+})
