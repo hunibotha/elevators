@@ -1,5 +1,3 @@
-import {DEFAULT_AVERAGE_ELEVATOR_STOP_TIME_S} from "../config/constants"
-
 /**
  * @param numberOfFloors {int} - number of floors inside the building
  * @param elevators {[Elevator]} - the elevators inside the building
@@ -41,10 +39,6 @@ export default class Building {
    */
   RemovePassenger(removedPassenger) {
     this.passengers = this.passengers.filter(({id}) => id !== removedPassenger.id)
-  }
-  
-  get averageElevatorStopTime() {
-    return DEFAULT_AVERAGE_ELEVATOR_STOP_TIME_S
   }
   
   /**

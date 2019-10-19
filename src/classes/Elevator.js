@@ -1,4 +1,4 @@
-import {DEFAULT_ELEVATOR_SPEED_FPS} from "../config/constants"
+import {DEFAULT_AVERAGE_ELEVATOR_STOP_TIME_S, DEFAULT_ELEVATOR_SPEED_FPS} from "../config/constants"
 import {generateUniqueString} from "../utilities"
 import Direction from "./Direction"
 
@@ -30,7 +30,71 @@ export default class Elevator {
    * @returns {int}
    */
   GetTimeToPassenger(passenger) {
-    return
+    if (this.CanPickUpPassenger(passenger)) {
+      return
+    }
+    /**
+     * Elevator finishes current delivery, then returns to the passenger.
+     * |elevator.destinationFloor - elevator.currentFloor| + |elevator.destinationFloor - passenger.currentFloor|) /
+     * elevator.speed + elevator.remainingStopFloors.length * elevator.averageStopTime
+     */
+    return (
+      Math.abs(this.destinationFloor - this.currentFloor) +
+      Math.abs(this.destinationFloor - passenger.currentFloor)
+    ) / this.speed + this.GetNumberOfStopsBetweenFloors(this.currentFloor, this.destinationFloor) * this.averageStopTime
+  }
+  
+  /**
+   * Returns how many times the elevator has to stop between two floors based on the destination floors of the assigned
+   * passengers. The startFloor and endFloor are included.
+   * @param startFloor {int}
+   * @param endFloor {int}
+   * @returns {number}
+   */
+  GetNumberOfStopsBetweenFloors(startFloor, endFloor) {
+    return this.assignedPassengers.reduce((stops, passenger) => {
+      if ((passenger.destinationFloor - startFloor) * (passenger.destinationFloor - endFloor) <= 0) ++stops
+      return stops
+    }, 0)
+  }
+  
+  /**
+   * An elevator can pick-up a passenger if:
+   * - elevator is in STAND-BY
+   * - or elevator moves into the passenger's direction and:
+   *  - the elevator won't pass the passenger's floor
+   *  - or the elevator will pass the passenger's floor and the passenger wants to move in the elevator's delivery
+   *  direction
+   * In any other case elevator must finish it's current delivery to get back to the passenger.
+   * @param passenger {Passenger}
+   * @returns {boolean} - true if elevator can pick up the specified passenger
+   */
+  CanPickUpPassenger(passenger) {
+    return this.direction === Direction.DIRECTIONS.NO_DIRECTION || // elevator is in STAND-BY
+      (
+        // elevator moving in the direction of the passenger
+        this.IsMovingInTheDirectionOfThePassenger(passenger) && (
+          // elevator won't pass the passenger's floor
+          (passenger.currentFloor - this.currentFloor) * (passenger.currentFloor - this.destinationFloor) > 0 ||
+          // elevator will pass the passenger's floor and the passenger wants to move in the elevator's delivery direction
+          this.direction === passenger.direction
+        )
+      )
+  }
+  
+  /**
+   * An elevator moves in the direction of the passenger when:
+   * - elevator is moving up, and it didn't pass the passenger's floor yet
+   * - elevator is moving down, and it didn't pass the passenger's floor yet
+   * @param passenger
+   * @returns {boolean}
+   */
+  IsMovingInTheDirectionOfThePassenger(passenger) {
+    return (
+      this.direction === Direction.DIRECTIONS.UP && this.currentFloor <= passenger.currentFloor
+    ) || (
+      this.direction === Direction.DIRECTIONS.DOWN && this.currentFloor >= passenger.currentFloor
+    )
   }
   
   /**
@@ -55,6 +119,10 @@ export default class Elevator {
    */
   AssignPassengers(passengers) {
     this._assignedPassengers = this.assignedPassengers.concat(passengers)
+  }
+  
+  get averageStopTime() {
+    return DEFAULT_AVERAGE_ELEVATOR_STOP_TIME_S
   }
   
   get speed() {
