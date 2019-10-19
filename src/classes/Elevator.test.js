@@ -29,3 +29,18 @@ test("Test Elevator.AssignPassengers", function () {
   elevator.AssignPassengers([passenger3, passenger4])
   expect(elevator.assignedPassengers).toEqual([passenger1, passenger2, passenger3, passenger4])
 })
+
+test("Test Elevator.UnAssignPassenger", function () {
+  const elevator = new Elevator(
+    undefined,
+    undefined,
+    undefined,
+    [passenger1, passenger2, passenger3, passenger4]
+  )
+  
+  elevator.UnAssignPassenger(passenger3)
+  expect(elevator.assignedPassengers).toEqual([passenger1, passenger2, passenger4])
+  
+  elevator.UnAssignPassenger(passenger3)
+  expect(elevator.assignedPassengers).toEqual([passenger1, passenger2, passenger4])
+})

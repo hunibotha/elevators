@@ -42,6 +42,14 @@ export default class Elevator {
   }
   
   /**
+   * Un-assigns a single passenger from the elevator.
+   * @param unAssignedPassenger {Passenger}
+   */
+  UnAssignPassenger(unAssignedPassenger) {
+    this._assignedPassengers = this.assignedPassengers.filter(({id}) => id !== unAssignedPassenger.id)
+  }
+  
+  /**
    * Assigns multiple passengers to the elevator.
    * @param passengers {[Passenger]}
    */
