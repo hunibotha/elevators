@@ -7,6 +7,99 @@ const passenger2 = new Passenger()
 const passenger3 = new Passenger()
 const passenger4 = new Passenger()
 
+test("Test Elevator.GetTotalDeliveryTimeForPassenger when elevator has to finish delivery before pick-up", function () {
+  /**
+   * Test Elevator.GetTotalDeliveryTimeOfPassenger when elevator has to finish delivery before pick-up.
+   * - passenger is on floor 4, and wants to get to the 8th floor
+   * - elevator is on the 6th floor and is moving to the 10th floor, having to deliver 4 more persons to the 7th,
+   * 8th(2 persons) and 10th floor.
+   * - expected result:
+   *  - the elevator should first finish the current trip, then get to the passenger. The steps the elevator makes are:
+   *    1. goes from floor 6 to floor 7: 1/elevator.speed secs pass
+   *    2. stops at floor 7: elevator.averageStopTime secs pass
+   *    3. goes to floor 8: 1/elevator.speed secs pass
+   *    4. stops at floor 8(2 passengers are put down but it counts as 1 stop): elevator.averageStopTime secs pass
+   *    5. goes to floor 10: 2/elevator.speed secs pass
+   *    6. stops at floor 10: elevator.averageStopTime secs pass
+   *    7. goes to floor 4: 6/elevator.speed secs pass
+   *    8. stops at floor 4: elevator.averageStopTime secs pass
+   *    9. goes to floor 8: 4/elevator.speed secs pass
+   *  - total amount of time the passenger has to wait for the elevator is: 1/elevator.speed + elevator.averageStopTime +
+   *   1/elevator.speed + elevator.averageStopTime + 2/elevator.speed + elevator.averageStopTime +
+   *   6/elevator.speed + elevator.averageStopTime + 4/elevator.speed secs
+   */
+  const passenger = new Passenger(undefined, 4, 8)
+  const elevator = new Elevator(
+    undefined,
+    6,
+    10,
+    [
+      new Passenger(undefined, 1, 7),
+      new Passenger(undefined, 2, 8),
+      new Passenger(undefined, 0, 8),
+      new Passenger(undefined, 1, 10)
+    ]
+  )
+  
+  const totalDeliveryTime = elevator.GetTotalDeliveryTimeForPassenger(passenger)
+  const expectedTotalDeliveryTime = 1 / elevator.speed + elevator.averageStopTime + 1 / elevator.speed +
+    elevator.averageStopTime + 2 / elevator.speed + elevator.averageStopTime + 6 / elevator.speed +
+    elevator.averageStopTime + 4 / elevator.speed
+  
+  expect(totalDeliveryTime).toEqual(expectedTotalDeliveryTime)
+})
+
+test("Test Elevator.GetTotalDeliveryTimeForPassenger when elevator can pick up passenger during delivery", function () {
+  /**
+   * Test Elevator.GetTotalDeliveryTimeOfPassenger when elevator can pick up passenger during delivery.
+   * - passenger is on the 4th floor and wants to get to the 11th floor
+   * - elevator is on the 0th floor and is moving to the 10th floor, having to deliver 7 more persons:
+   *  - 1 person to the 1st floor
+   *  - 2 persons to the 3rd floor
+   *  - 1 person to the 4th floor
+   *  - 1 person to the 6th floor
+   *  - 2 persons to the 10th floor
+   * - expected result:
+   *  - the steps the elevator makes are:
+   *    1. goes from floor 0 to floor 1: 1/elevator.speed secs pass
+   *    2. stops at floor 1: elevator.averageStopTime secs pass
+   *    3. goes to floor 3: 2/elevator.speed secs pass
+   *    4. stops at floor 3: elevator.averageStopTime secs pass
+   *    5. goes to floor 4: 1/elevator.speed secs pass
+   *    6. stops at floor 4: elevator.averageStopTime secs pass
+   *    7. goes to floor 6: 2/elevator.speed secs pass
+   *    8. stops at floor 6: elevator.averageStopTime secs pass
+   *    9. goes to floor 10: 4/elevator.speed secs pass
+   *    10.stops at floor 10: elevator.averageStopTime secs pass
+   *    11.goes to floor 11: 1/elevator.speed secs pass
+   *  - total amount of time the passenger has to wait for the elevator is: 1 / elevator.speed +
+   *  elevator.averageStopTime + 2 / elevator.speed + elevator.averageStopTime + 1 / elevator.speed +
+   *  elevator.averageStopTime + 2/elevator.speed + elevator.averageStopTime + 4/elevator.speed +
+   *  elevator.averageStopTime + 1/elevator.speed
+   */
+  const passenger = new Passenger(undefined, 4, 11)
+  const elevator = new Elevator(
+    undefined,
+    0,
+    10,
+    [
+      new Passenger(undefined, 0, 1),
+      new Passenger(undefined, 0, 3),
+      new Passenger(undefined, 0, 3),
+      new Passenger(undefined, 0, 4),
+      new Passenger(undefined, 0, 6),
+      new Passenger(undefined, 0, 10),
+      new Passenger(undefined, 0, 10)
+    ]
+  )
+  
+  const deliveryTime = elevator.GetTotalDeliveryTimeForPassenger(passenger)
+  const expectedDeliveryTime = 1 / elevator.speed + elevator.averageStopTime + 2 / elevator.speed +
+    elevator.averageStopTime + 1 / elevator.speed + elevator.averageStopTime + 2/elevator.speed +
+    elevator.averageStopTime + 4/elevator.speed + elevator.averageStopTime + 1/elevator.speed
+  
+  expect(deliveryTime).toEqual(expectedDeliveryTime)
+})
 
 test("Test Elevator.GetDeliveryTimeForPassenger when elevator can pick up passenger during delivery", function () {
   /**
@@ -41,16 +134,11 @@ test("Test Elevator.GetDeliveryTimeForPassenger when elevator can pick up passen
     ]
   )
   
-  const timeToWait = elevator.GetDeliveryTimeForPassenger(passenger)
-  const expectedTimeToWait = 2 / elevator.speed + elevator.averageStopTime + 4 / elevator.speed +
+  const deliveryTime = elevator.GetDeliveryTimeForPassenger(passenger)
+  const expectedDeliveryTime = 2 / elevator.speed + elevator.averageStopTime + 4 / elevator.speed +
     elevator.averageStopTime + 1 / elevator.speed
   
-  expect(timeToWait).toEqual(expectedTimeToWait)
-})
-
-test("Test Elevator.GetDeliveryTimeOfPassenger when elevator can pick up passenger after delivery", function () {
-  // TODO: implement test
-  expect(1).toEqual(0)
+  expect(deliveryTime).toEqual(expectedDeliveryTime)
 })
 
 test(

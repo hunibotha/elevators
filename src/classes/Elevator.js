@@ -31,7 +31,26 @@ export default class Elevator {
    * @returns {number}
    */
   GetTotalDeliveryTimeForPassenger(passenger) {
-    return this.GetTimeToPassenger(passenger) + this.averageStopTime + this.GetDeliveryTimeForPassenger(passenger)
+    // Simulating the delivery and measuring delivery time
+    // 1. calculate the time it takes for the elevator to get to the passenger
+    const {distance: tripToPassengerDistance, stops: tripToPassengerStops} = this.GetTripToPassenger(passenger)
+    const timeToPassenger = tripToPassengerDistance / this.speed + tripToPassengerStops.length * this.averageStopTime
+    // Simulate the elevator getting to the passenger
+    // 2. remove the passengers that get down on the road to the passenger, but first back them up because this is a simulation
+    const savedPassengers = this.assignedPassengers
+    this._assignedPassengers = this.assignedPassengers.filter(
+      passenger => !tripToPassengerStops.includes(passenger.destinationFloor)
+    )
+    // 3. change elevator currentFloor to the passenger's currentFloor but back-it up because this is a simulation
+    const savedCurrentFloor = this.currentFloor
+    this.currentFloor = passenger.currentFloor
+    // 4. calculate the time it takes for the elevator to finish the delivery of the passenger
+    const deliveryTimeOfPassenger = this.GetDeliveryTimeForPassenger(passenger)
+    // 5. roll-back elevator to the original state(the state before the simulation)
+    this._assignedPassengers = savedPassengers
+    this.currentFloor = savedCurrentFloor
+    
+    return timeToPassenger + this.averageStopTime + deliveryTimeOfPassenger
   }
   
   /**
@@ -60,31 +79,41 @@ export default class Elevator {
    * @returns {int}
    */
   GetTimeToPassenger(passenger) {
+    const {distance, stops} = this.GetTripToPassenger(passenger)
+    
+    return distance / this.speed + stops.length * this.averageStopTime
+  }
+  
+  /**
+   * Returns information about the trip the elevator has to make to get to the passenger.
+   * @param passenger {Passenger}
+   * @returns {{
+   *   distance: {int},
+   *   stops: {[int]}
+   * }}
+   */
+  GetTripToPassenger(passenger) {
     if (this.CanPickUpPassenger(passenger)) {
-      /**
-       * Calculate time for the case when elevator doesn't have to return for the passenger.
-       * (|elevator.currentFloor - passenger.currentFloor|) / elevator.speed +
-       * elevator.remainingStopFloors.filter(
-       *   stopFloor => stopFloor !== passenger.currentFloor && stopFloor < passenger.destinationFloor
-       * ).length * elevatorStopTime
-       */
-      return Math.abs(this.currentFloor - passenger.currentFloor) / this.speed +
-        this.GetNumberOfStopsBetweenFloors(
+      // Calculate trip info when elevator doesn't have to return for the passenger.
+      return {
+        distance: Math.abs(this.currentFloor - passenger.currentFloor),
+        stops: this.GetStopsBetweenFloors(
           this.currentFloor,
           passenger.currentFloor,
           // the floor of the passenger should be excluded from the calculations
           [passenger.currentFloor]
-        ) * this.averageStopTime
+        )
+      }
     }
-    /**
-     * Calculate time for the case when elevator finishes current delivery, then returns to the passenger.
-     * |elevator.destinationFloor - elevator.currentFloor| + |elevator.destinationFloor - passenger.currentFloor|) /
-     * elevator.speed + elevator.remainingStopFloors.length * elevator.averageStopTime
-     */
-    return (
-      Math.abs(this.destinationFloor - this.currentFloor) +
-      Math.abs(this.destinationFloor - passenger.currentFloor)
-    ) / this.speed + this.GetNumberOfStopsBetweenFloors(this.currentFloor, this.destinationFloor) * this.averageStopTime
+    
+    // Calculate trip info for the case when elevator finishes current delivery, then returns to the passenger.
+    return {
+      distance: (
+        Math.abs(this.destinationFloor - this.currentFloor) +
+        Math.abs(this.destinationFloor - passenger.currentFloor)
+      ),
+      stops: this.GetStopsBetweenFloors(this.currentFloor, this.destinationFloor)
+    }
   }
   
   /**
@@ -98,18 +127,30 @@ export default class Elevator {
    * @returns {number}
    */
   GetNumberOfStopsBetweenFloors(startFloor, endFloor, excludedFloors = []) {
-    return this.assignedPassengers.reduce(({stops, destinationFloors}, passenger) => {
+    return this.GetStopsBetweenFloors(startFloor, endFloor, excludedFloors).length
+  }
+  
+  /**
+   * Returns the stops the elevator makes between two floors based on the destination floors of the assigned
+   * passengers.
+   * The startFloor and endFloor are included.
+   * If multiple passengers go to the same floor it still counts for a single stop.
+   * @param startFloor {int}
+   * @param endFloor {int}
+   * @param excludedFloors {[int]} - floors that should be excluded from the count
+   * @returns {[int]}
+   */
+  GetStopsBetweenFloors(startFloor, endFloor, excludedFloors = []) {
+    return this.assignedPassengers.reduce((stops, passenger) => {
       if (
-        !destinationFloors[passenger.destinationFloor] &&
+        !stops.includes(passenger.destinationFloor) &&
         !excludedFloors.includes(passenger.destinationFloor) &&
         (passenger.destinationFloor - startFloor) * (passenger.destinationFloor - endFloor) <= 0
       ) {
-        ++stops
-        destinationFloors[passenger.destinationFloor] = true
+        stops.push(passenger.destinationFloor)
       }
-      
-      return {stops, destinationFloors}
-    }, {stops: 0, destinationFloors: {}}).stops
+      return stops
+    }, [])
   }
   
   /**
