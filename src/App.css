@@ -20,3 +20,38 @@
 .App-link {
   color: #09d3ac;
 }
+
+.building-form{
+}
+
+fieldset{
+  padding: 10px;
+  text-align: left;
+}
+
+.action-button{
+}
+
+.info-button{
+  background-color: #03219f;
+  color: #fff;
+}
+
+.success-button{
+  background-color: #008f4d;
+  color: #fff;
+}
+
+.danger-button{
+  background-color: #ff1733;
+  color: #fff;
+}
+
+.elevator-stop{
+  margin: 0 6px 6px 0;
+  padding: 5px;
+  background-color: #09d3ac;
+  font-weight: bold;
+  font-size: 15px;
+  cursor: pointer;
+}
