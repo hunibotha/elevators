@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import {ElevatorShape} from "../shapes"
 
 const style = {
   container: {
@@ -33,9 +34,7 @@ const ElevatorItem = ({elevator, onEdit, onDelete}) => (
 )
 
 ElevatorItem.propTypes = {
-  elevator: PropTypes.shape({
-    id: PropTypes.string.isRequired
-  }).isRequired,
+  elevator: ElevatorShape.isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired
 }

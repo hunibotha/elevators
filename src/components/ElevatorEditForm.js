@@ -1,7 +1,8 @@
 import React, {useState} from "react"
 import PropTypes from "prop-types"
+import {ElevatorShape} from "../shapes"
 import NumberInput from "./common/number_input"
-import Modal from "./common/modal";
+import Modal from "./common/modal"
 
 const style = {
   stopContainer: {
@@ -21,9 +22,9 @@ const ElevatorEditForm = ({elevator, onSave, onCancel, highestFloor}) => {
   const [stops, setStops] = useState(elevator.stops)
   const [addedStop, setAddedStop] = useState("")
   
-  const validateFloor = (floor, floorname) => {
+  const validateFloor = (floor, floorName) => {
     if (!(floor >= 0 && floor <= highestFloor)) {
-      alert(`Invalid ${floorname} value: floor should be a number between 0 and the number of floors in the building (${highestFloor})`)
+      alert(`Invalid ${floorName} value: floor should be a number between 0 and the number of floors inside the building (${highestFloor})`)
       return false
     }
     
@@ -32,11 +33,17 @@ const ElevatorEditForm = ({elevator, onSave, onCancel, highestFloor}) => {
   
   const removeStop = removedStop => setStops(stops.filter(stop => stop !== removedStop))
   const addStop = () => {
-    if ((addedStop || addedStop === 0) && !(addedStop < 0) && addedStop <= highestFloor && !stops.includes(addedStop)) {
+    if ((addedStop || addedStop === 0) && !(addedStop < 0) && addedStop <= highestFloor && !stops.includes(addedStop) &&
+      (addedStop - currentFloor) * (addedStop - destinationFloor) <= 0
+    ) {
       setStops([...stops, addedStop])
       setAddedStop("")
     } else {
-      alert(`Invalid stop: added stop should be a number between 0 and the number of floors in the building (${highestFloor})`)
+      alert(`Invalid stop:
+        - added stop should be a number between 0 and the number of floors in the building (${highestFloor})
+        - added stop should be between the current- and destination floors
+        - a certain floor can be added to the stops only once`
+      )
     }
   }
   
@@ -46,7 +53,7 @@ const ElevatorEditForm = ({elevator, onSave, onCancel, highestFloor}) => {
         id: elevator.id,
         currentFloor,
         destinationFloor,
-        stops
+        stops: stops.filter(stop => (stop - currentFloor) * (stop - destinationFloor) <= 0)
       })
     }
   }
@@ -96,6 +103,10 @@ const ElevatorEditForm = ({elevator, onSave, onCancel, highestFloor}) => {
               + Add stop
             </button>
           </div>
+          <small>
+            *Attention! Stops which aren't between the current- and destination floors will be removed after the
+            elevator info is saved!
+          </small>
         </fieldset>
         <button
           onClick={saveElevator}
@@ -115,12 +126,7 @@ const ElevatorEditForm = ({elevator, onSave, onCancel, highestFloor}) => {
 }
 
 ElevatorEditForm.propTypes = {
-  elevator: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    currentFloor: PropTypes.number.isRequired,
-    destinationFloor: PropTypes.number.isRequired,
-    stops: PropTypes.arrayOf(PropTypes.number).isRequired
-  }).isRequired,
+  elevator: ElevatorShape.isRequired,
   onSave: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
   highestFloor: PropTypes.number.isRequired

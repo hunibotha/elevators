@@ -26,7 +26,7 @@ export default class Building {
   CallElevatorForPassenger(passenger) { // Level 1
     return this.elevators.reduce(({bestElevatorDeliveryTime, bestElevator}, elevator) => {
       const elevatorDeliveryTime = elevator.GetTotalDeliveryTimeForPassenger(passenger)
-      if(!process.env.NODE_ENV === 'test'){
+      if(process.env.NODE_ENV !== 'test'){
         console.log(`Elevator ${elevator.id} can deliver passenger ${passenger.id} under ${elevatorDeliveryTime} seconds`)
       }
       
@@ -53,7 +53,7 @@ export default class Building {
       console.log(passenger.toString())
       return passenger
     })
-    
+    console.log('pasengers', passengers)
     // just test
     //console.log('delivery time of passengers:', this.elevators[4].GetTotalDeliveryTimeForPassengers(passengers))
   }
