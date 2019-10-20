@@ -4,6 +4,8 @@
  * @param passengers {[Passenger]} - the passengers inside the building
  * @returns {Building}
  */
+import Passenger from "./Passenger";
+
 export default class Building {
   
   _numberOfFloors
@@ -21,7 +23,7 @@ export default class Building {
    * @param passenger {Passenger}
    * @returns {Elevator}
    */
-  CallElevatorForPassenger(passenger) {
+  CallElevatorForPassenger(passenger) { // Level 1
     return this.elevators.reduce(({bestElevatorDeliveryTime, bestElevator}, elevator) => {
       const elevatorDeliveryTime = elevator.GetTotalDeliveryTimeForPassenger(passenger)
       if(!process.env.NODE_ENV === 'test'){
@@ -35,6 +37,38 @@ export default class Building {
       bestElevatorDeliveryTime: 999999,
       bestElevator: null
     }).bestElevator
+  }
+  
+  DeliverRandomNumberOfPassengers(){ // Level 2
+    // generate the number of passengers
+    const nrOfPassengers = Math.floor(Math.random() * 5) + 5;
+    console.log('Number of passengers:', nrOfPassengers)
+    // generate a number of nrOfPassengers passengers
+    const passengers = (new Array(nrOfPassengers)).fill(0).map(() => {
+      // generate passenger start and destination floors
+      const startFloor = this.GenerateRandomFloor()
+      let destinationFloor = this.GenerateRandomFloor(startFloor)
+      // create passenger instance
+      const passenger = new Passenger(undefined, startFloor, destinationFloor)
+      console.log(passenger.toString())
+      return passenger
+    })
+    
+    // just test
+    //console.log('delivery time of passengers:', this.elevators[4].GetTotalDeliveryTimeForPassengers(passengers))
+  }
+  
+  /**
+   * Returns a random floor inside the building.
+   * @param excludeFloor {int} - if the randomly generated floor equals this floor, a new floor is generated
+   */
+  GenerateRandomFloor(excludeFloor){
+    const floor = Math.floor(Math.random() * (this.numberOfFloors - 1))
+    if(floor === excludeFloor){
+      return this.GenerateRandomFloor(excludeFloor)
+    }
+    
+    return floor
   }
   
   /**

@@ -1,5 +1,6 @@
 import {DEFAULT_AVERAGE_ELEVATOR_STOP_TIME_S, DEFAULT_ELEVATOR_SPEED_FPS} from "../config/constants"
-import {generateUniqueString} from "../utilities"
+import {generateUniqueString, getAllIndexes} from "../utilities"
+import {PermutateArray} from "../utilities/combinatorics"
 import Direction from "./Direction"
 
 /**
@@ -190,6 +191,93 @@ export default class Elevator {
     ) || (
       this.direction === Direction.DIRECTIONS.DOWN && this.currentFloor >= passenger.currentFloor
     )
+  }
+  
+  /**
+   * Calculates the minimum time it takes to deliver all the already assigned passengers and the passed passengers.
+   * @param passengers {[Passenger]}
+   * @returns {int}
+   */
+  GetTotalDeliveryTimeForPassengers(passengers) {
+    return passengers.reduce((minimumDeliveryTime, firstPassenger) => {
+      // 1. calculate the time it takes for the elevator to get to the first passenger
+      const {distance: tripToPassengerDistance, stops: tripToPassengerStops} = this.GetTripToPassenger(firstPassenger)
+      const timeToPassenger = tripToPassengerDistance / this.speed + tripToPassengerStops.length * this.averageStopTime
+      // 2. get the rest of the destinations and calculate remaining delivery time from them
+      // calculate the remaining destination floors left after getting to the passenger
+      const remainingDestinationFloors = this.assignedPassengers.filter(
+        passenger => !tripToPassengerStops.includes(passenger.destinationFloor)
+      ).map(({destinationFloor}) => destinationFloor)
+      // calculate start and destination floors of the passed passengers
+      const passengerFloors = passengers.reduce((passengerFloors, passenger) => {
+        const currentPassengerFloors = [passenger.destinationFloor]
+        /** if the first passenger, don't add the currentFloor to the passengerFloors, because passenger.currentFloor is
+         * the first floor and that doesn't require a permutation. */
+        if (passenger.id !== firstPassenger.id) currentPassengerFloors.push(passenger.currentFloor)
+        return passengerFloors.concat(currentPassengerFloors)
+      }, [])
+      // 3. calculate minimum delivery time when firstPassenger is the first passenger the elevator goes to
+      const deliveryTime = timeToPassenger + this.CalculateMinimumDeliveryTimeOfDestinations(
+        firstPassenger.currentFloor,
+        remainingDestinationFloors.concat(passengerFloors),
+        passengers.filter(passenger => passenger.id !== firstPassenger.id)
+      )
+      
+      return deliveryTime < minimumDeliveryTime ? deliveryTime : minimumDeliveryTime
+    }, Infinity)
+  }
+  
+  /**
+   * Calculates the minimum time it takes to go to all destinations, beginning from the startFloor.
+   * @param startFloor {int} - the floor the delivery begins from
+   * @param destinations {[int]} - destinations that must be reached
+   * @param passengers {[Passenger]} - validity of permutation is checked based on the trips the passengers make.
+   * @returns {int}
+   */
+  CalculateMinimumDeliveryTimeOfDestinations(startFloor, destinations, passengers) {
+    // get all possible delivery orders(permutation of delivery destinations)
+    const destinationPermutations = PermutateArray(destinations)
+    return destinationPermutations.reduce((minimumDeliveryTime, permutation) => {
+      // if the generated permutation doesn't include the trip of all passengers, we won't calculate the delivery time of the trip
+      if (!this.isDeliveryOrderValid(destinations, passengers)) {
+        return minimumDeliveryTime
+      }
+      // calculate time it takes for the elevator to reach all the floors in the permutation
+      const deliveryTime = [startFloor].concat(permutation).reduce((totalDeliveryTime, floor, index, floors) => {
+        // don't calculate time passed when we're on the first floor, or we're on the same floor as at the previous permutation
+        if (index === 0 || (index !== 0 && floors[index - 1] !== floor)) return totalDeliveryTime
+        // trip time is time passed by getting here from the previous floor + 1 stop time
+        const currentTipTime = Math.abs(floor - floors[index - 1]) / this.speed + this.averageStopTime
+        return totalDeliveryTime + currentTipTime
+      }, 0)
+      
+      return deliveryTime < minimumDeliveryTime ? deliveryTime : minimumDeliveryTime
+    }, Infinity)
+  }
+  
+  /**
+   * Checks if all the trips of the passengers are present in the correct order inside the destinations array
+   * @param destinations {[int]}
+   * @param passengers {[Passenger]}
+   * @returns {boolean}
+   */
+  isDeliveryOrderValid(destinations, passengers) {
+    for (let passenger in passengers) {
+      const startFloorIndex = destinations.findIndex(passenger.currentFloor)
+      const destinationFloorIndexes = getAllIndexes(destinations, passenger.destinationFloor)
+      /** the delivery order is invalid if:
+       * - passenger start and destination floors are not present in the destinations
+       * - the start and destination floors aren't in the correct order: first the elevator should get to the the start
+       * floor to pick up the user, then the destination floor)
+       */
+      if (
+        startFloorIndex === -1 ||
+        // no destinationFloor is not found after the startFloor
+        destinationFloorIndexes.includes(destinationFloorIndex => destinationFloorIndex > startFloorIndex)
+      ) return false
+    }
+    
+    return true
   }
   
   /**

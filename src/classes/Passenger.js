@@ -57,4 +57,8 @@ export default class Passenger {
   set destinationFloor(destinationFloor) {
     this._destinationFloor = destinationFloor
   }
+  
+  toString(){
+    return `Passenger #${this.id} is waiting on the floor ${this.currentFloor} with the destination of ${this.destinationFloor}`
+  }
 }
