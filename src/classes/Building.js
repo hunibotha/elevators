@@ -22,7 +22,19 @@ export default class Building {
    * @returns {Elevator}
    */
   CallElevatorForPassenger(passenger) {
-    return
+    return this.elevators.reduce(({bestElevatorDeliveryTime, bestElevator}, elevator) => {
+      const elevatorDeliveryTime = elevator.GetTotalDeliveryTimeForPassenger(passenger)
+      if(!process.env.NODE_ENV === 'test'){
+        console.log(`Elevator ${elevator.id} can deliver passenger ${passenger.id} under ${elevatorDeliveryTime} seconds`)
+      }
+      
+      return elevatorDeliveryTime < bestElevatorDeliveryTime ?
+        {bestElevatorDeliveryTime: elevatorDeliveryTime, bestElevator: elevator} :
+        {bestElevatorDeliveryTime, bestElevator}
+    }, {
+      bestElevatorDeliveryTime: 999999,
+      bestElevator: null
+    }).bestElevator
   }
   
   /**
