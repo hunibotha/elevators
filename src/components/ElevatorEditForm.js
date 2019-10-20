@@ -1,6 +1,19 @@
-import React, {useState} from 'react'
-import PropTypes from 'prop-types'
-import NumberInput from "./common/number_input";
+import React, {useState} from "react"
+import PropTypes from "prop-types"
+import NumberInput from "./common/number_input"
+import Modal from "./common/modal";
+
+const style = {
+  stopContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    maxWidth: 480,
+    marginBottom: 10
+  },
+  stopTitle: {
+    fontWeight: 500
+  }
+}
 
 const ElevatorEditForm = ({elevator, onSave, onCancel, highestFloor}) => {
   const [currentFloor, setCurrentFloor] = useState(elevator.currentFloor)
@@ -19,7 +32,7 @@ const ElevatorEditForm = ({elevator, onSave, onCancel, highestFloor}) => {
   
   const removeStop = removedStop => setStops(stops.filter(stop => stop !== removedStop))
   const addStop = () => {
-    if ((addedStop || addedStop === 0) && !addedStop < 0 && addedStop <= highestFloor && !stops.includes(addedStop)) {
+    if ((addedStop || addedStop === 0) && !(addedStop < 0) && addedStop <= highestFloor && !stops.includes(addedStop)) {
       setStops([...stops, addedStop])
       setAddedStop("")
     } else {
@@ -28,7 +41,7 @@ const ElevatorEditForm = ({elevator, onSave, onCancel, highestFloor}) => {
   }
   
   const saveElevator = () => {
-    if(validateFloor(currentFloor, "Current floor") && validateFloor(destinationFloor, "Destination floor")){
+    if (validateFloor(currentFloor, "Current floor") && validateFloor(destinationFloor, "Destination floor")) {
       onSave({
         id: elevator.id,
         currentFloor,
@@ -39,62 +52,65 @@ const ElevatorEditForm = ({elevator, onSave, onCancel, highestFloor}) => {
   }
   
   return (
-    <form action="#">
-      <fieldset>
-        <legend>Editing elevator #{elevator.id}</legend>
-        <div>
-          <NumberInput
-            label="Current floor: "
-            value={currentFloor}
-            onChange={e => setCurrentFloor(parseInt(e.target.value || 0))}
-          />
-        </div>
-        <div>
-          <NumberInput
-            label="Destination floor: "
-            value={destinationFloor}
-            onChange={e => setDestinationFloor(parseInt(e.target.value || 0))}
-          />
-        </div>
-        <h4>Stops(floors the elevator will stop on):</h4>
-        <div>
-          {stops.map(stop => (
-            <span
-              key={stop}
-              title="Click to remove"
-              onClick={() => removeStop(stop)}
-              className="elevator-stop"
-            >
+    <Modal onClose={onCancel}>
+      <form action="#">
+        <fieldset>
+          <legend>Editing elevator <b>#{elevator.id}</b></legend>
+          <div>
+            <NumberInput
+              label="Current floor: "
+              value={currentFloor}
+              onChange={currentFloor => setCurrentFloor(currentFloor)}
+            />
+          </div>
+          <div>
+            <NumberInput
+              label="Destination floor: "
+              value={destinationFloor}
+              onChange={destinationFloor => setDestinationFloor(destinationFloor)}
+            />
+          </div>
+          <br/>
+          <p style={style.stopTitle}>Stops(floors the elevator will stop on):</p>
+          <div style={style.stopContainer}>
+            {stops.map(stop => (
+              <span
+                key={stop}
+                title="Click to remove"
+                onClick={() => removeStop(stop)}
+                className="elevator-stop"
+              >
               {stop}
             </span>
-          ))}
+            ))}
+          </div>
           <div>
             <NumberInput
               value={addedStop}
-              onChange={e => setAddedStop(parseInt(e.target.value || 0))}
+              onChange={addedStop => setAddedStop(addedStop)}
             />
             <button
-              className="success-button"
+              className="action-button success-button"
               onClick={addStop}
             >
               + Add stop
             </button>
           </div>
-        </div>
-      </fieldset>
-      <button
-        onClick={saveElevator}
-        className="action-button success-button"
-      >
-        Save
-      </button>
-      <button
-        onClick={onCancel}
-        className="action-button info-button"
-      >
-        Cancel
-      </button>
-    </form>
+        </fieldset>
+        <button
+          onClick={saveElevator}
+          className="action-button success-button"
+        >
+          Save
+        </button>
+        <button
+          onClick={onCancel}
+          className="action-button info-button"
+        >
+          Cancel
+        </button>
+      </form>
+    </Modal>
   )
 }
 

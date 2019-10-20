@@ -44,9 +44,10 @@ const App = () => {
           <NumberInput
             label="Number of floors: "
             value={numberOfFloors}
-            onChange={e => setNumberOfFloors(parseInt(e.target.value || 0))}
+            onChange={numberOfFloors => setNumberOfFloors(numberOfFloors)}
           />
-          <h4>Elevators:</h4>
+          <br/><br/>
+          <p>Elevators:</p>
           {elevators.map((elevator) => {
             return (
               <ElevatorItem
@@ -58,7 +59,7 @@ const App = () => {
             )
           })}
           <button
-            className="success-button"
+            className="action-button success-button"
             onClick={addElevator}
           >
             + Add elevator
