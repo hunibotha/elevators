@@ -45,10 +45,13 @@ export default class Elevator {
      * Delivery time = (|passenger.destinationFloor - passenger.currentFloor|) / elevator.speed + (nr of stops between
      *  passenger.currentFloor and passenger.destinationFloor) * elevator.averageStopTime
      */
-      // the stops on the current floor shouldn't be included
-    const floorAfterPassengerCurrentFloor = passenger.currentFloor + passenger.direction
     return Math.abs(passenger.destinationFloor - passenger.currentFloor) / this.speed +
-      this.GetNumberOfStopsBetweenFloors(floorAfterPassengerCurrentFloor, passenger.destinationFloor) * this.averageStopTime
+      this.GetNumberOfStopsBetweenFloors(
+        passenger.currentFloor,
+        passenger.destinationFloor,
+        // the stops on the current floor and destination floor shouldn't be included
+        [passenger.currentFloor, passenger.destinationFloor]
+      ) * this.averageStopTime
   }
   
   /**
@@ -65,11 +68,13 @@ export default class Elevator {
        *   stopFloor => stopFloor !== passenger.currentFloor && stopFloor < passenger.destinationFloor
        * ).length * elevatorStopTime
        */
-        // the floor of the passenger should be excluded from the calculations(the previous floor should be included)
-      const floorBeforePassengerCurrentFloor = passenger.currentFloor -
-        Direction.Calculate(this.currentFloor, passenger.currentFloor)
       return Math.abs(this.currentFloor - passenger.currentFloor) / this.speed +
-        this.GetNumberOfStopsBetweenFloors(this.currentFloor, floorBeforePassengerCurrentFloor) * this.averageStopTime
+        this.GetNumberOfStopsBetweenFloors(
+          this.currentFloor,
+          passenger.currentFloor,
+          // the floor of the passenger should be excluded from the calculations
+          [passenger.currentFloor]
+        ) * this.averageStopTime
     }
     /**
      * Calculate time for the case when elevator finishes current delivery, then returns to the passenger.
@@ -89,12 +94,14 @@ export default class Elevator {
    * If multiple passengers go to the same floor it still counts for a single stop.
    * @param startFloor {int}
    * @param endFloor {int}
+   * @param excludedFloors {[int]} - floors that should be excluded from the count
    * @returns {number}
    */
-  GetNumberOfStopsBetweenFloors(startFloor, endFloor) {
+  GetNumberOfStopsBetweenFloors(startFloor, endFloor, excludedFloors = []) {
     return this.assignedPassengers.reduce(({stops, destinationFloors}, passenger) => {
       if (
         !destinationFloors[passenger.destinationFloor] &&
+        !excludedFloors.includes(passenger.destinationFloor) &&
         (passenger.destinationFloor - startFloor) * (passenger.destinationFloor - endFloor) <= 0
       ) {
         ++stops
