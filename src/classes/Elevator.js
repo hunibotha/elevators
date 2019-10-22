@@ -1,5 +1,5 @@
 import {DEFAULT_AVERAGE_ELEVATOR_STOP_TIME_S, DEFAULT_ELEVATOR_SPEED_FPS} from "../config/constants"
-import {generateUniqueString, getAllIndexes} from "../utilities"
+import {arrayUnique, generateUniqueString, getAllIndexes} from "../utilities"
 import {PermutateArray} from "../utilities/combinatorics"
 import Direction from "./Direction"
 
@@ -194,11 +194,14 @@ export default class Elevator {
   }
   
   /**
-   * Calculates the minimum time it takes to deliver all the already assigned passengers and the passed passengers.
+   * Calculates the absolute minimum time it takes to deliver all the already assigned passengers and the passed
+   * passengers with a permutational approach(it calculates the absolute minimum).
+   * Not working yet because of memory problems and because of high execution time of algorithms with relatively small
+   * memory usage. See here: https://stackoverflow.com/questions/11208446/generating-permutations-of-a-set-most-efficiently
    * @param passengers {[Passenger]}
    * @returns {int}
    */
-  GetTotalDeliveryTimeForPassengers(passengers) {
+  GetTotalDeliveryTimeForPassengersPermutationalApproach(passengers) {
     return passengers.reduce((minimumDeliveryTime, firstPassenger) => {
       // 1. calculate the time it takes for the elevator to get to the first passenger
       const {distance: tripToPassengerDistance, stops: tripToPassengerStops} = this.GetTripToPassenger(firstPassenger)
@@ -226,6 +229,156 @@ export default class Elevator {
       return deliveryTime < minimumDeliveryTime ? deliveryTime : minimumDeliveryTime
     }, Infinity)
   }
+  
+  /**
+   * Calculates the minimum time it takes to deliver all the already assigned passengers and the passed
+   * passengers. Implemented with a greedy approach and it's not guaranteed, that it calculates the absolute minimum
+   * delivery time.
+   * @param passengers {[Passenger]}
+   * @returns {int}
+   */
+  GetTotalDeliveryTimeForPassengers(passengers) {
+    if (passengers.length === 0) {
+      return 0
+    }
+    let totalTime = 0
+    // separate up & down trips
+    let {upTrips, downTrips} = passengers.reduce((trips, passenger) => {
+      trips[passenger.direction === Direction.DIRECTIONS.DOWN ? 'downTrips' : 'upTrips'].push(passenger)
+      return trips
+    }, {upTrips: [], downTrips: []})
+    // order up trips in an increasing order by the start floor
+    upTrips = upTrips.sort((passenger1, passenger2) => passenger1.currentFloor - passenger2.currentFloor)
+    // order down trips in a decreasing order by the start floor
+    downTrips = downTrips.sort((passenger1, passenger2) => passenger2.currentFloor - passenger1.currentFloor)
+    
+    let pickedUpPassengers = []
+    /* if elevator is currently delivering, it will finish its delivery but it'll also deliver all the passengers that
+     go in the same direction with the elevator's direction. */
+    if (this.direction !== Direction.DIRECTIONS.NO_DIRECTION) {
+      // pick-up & deliver passengers in the direction of the destination floor
+      const {
+        deliveredPassengers, pickedUpPassengers: pickedUpPassengersDuringDelivery, remainingPassengers
+      } = this.PickUpAndDeliverPassengersBetweenFloors(
+        (this.direction === Direction.DIRECTIONS.UP ? upTrips : downTrips),
+        this.currentFloor,
+        this.destinationFloor,
+        pickedUpPassengers
+      )
+      if (this.direction === Direction.DIRECTIONS.UP) upTrips = remainingPassengers
+      else downTrips = remainingPassengers
+      pickedUpPassengers = pickedUpPassengersDuringDelivery
+      const stopTimeToDestinationFloor = arrayUnique(
+        this.assignedPassengers.concat(deliveredPassengers.concat(pickedUpPassengersDuringDelivery))
+      ).length * this.averageStopTime
+      const timeToDestinationFloor = Math.abs(this.destinationFloor - this.currentFloor) / this.speed
+      totalTime += timeToDestinationFloor + stopTimeToDestinationFloor
+    }
+    /* decide whether we'll begin with the up- or the down trip:
+    * - if we have only up- or down trips, we'll begin with the only existing trip
+    * - if elevator stands-by or delivering, we'll begin with the trip which is closer to the destination floor of the
+    * elevator. */
+    let tripOrder = []
+    if (!upTrips[0]) tripOrder = [downTrips]
+    else if (!downTrips[0]) tripOrder = [upTrips]
+    else {
+      tripOrder = (
+        Math.abs(upTrips[0].currentFloor - this.destinationFloor) <=
+        Math.abs(downTrips[0].currentFloor - this.destinationFloor)
+      ) ?
+        [upTrips, downTrips] : [downTrips, upTrips]
+    }
+    const deliveryStartFloor = tripOrder[0][0].currentFloor
+    // If not already there, go to the deliveryStartFloor and deliver all the trips that are on the way there
+    if (this.destinationFloor !== deliveryStartFloor) {
+      const direction = Direction.Calculate(this.destinationFloor, deliveryStartFloor)
+      // pick-up & deliver passengers in the direction of the deliveryStartFloor
+      const {
+        deliveredPassengers, pickedUpPassengers: pickedUpPassengersDuringDelivery, remainingPassengers
+      } = this.PickUpAndDeliverPassengersBetweenFloors(
+        direction === Direction.DIRECTIONS.UP ? upTrips : downTrips,
+        this.destinationFloor,
+        deliveryStartFloor,
+        pickedUpPassengers
+      )
+      // TODO: fix bug - tripOrder should be updated instead of upTrips or downTrips
+      if (direction === Direction.DIRECTIONS.UP) upTrips = remainingPassengers
+      else downTrips = remainingPassengers
+      // end fix bug
+      pickedUpPassengers = pickedUpPassengers.concat(pickedUpPassengersDuringDelivery)
+      const stopTimeToDeliveryStartFloor = arrayUnique(
+        deliveredPassengers.concat(pickedUpPassengersDuringDelivery)
+      ).length * this.averageStopTime
+      const timeToDeliveryStartFloor = Math.abs(this.destinationFloor - deliveryStartFloor) / this.speed
+      totalTime += timeToDeliveryStartFloor + stopTimeToDeliveryStartFloor
+    }
+    
+    // elevator delivers what remained from the trips
+    return tripOrder.reduce((totalTime, trip) => {
+      if (trip.length === 0) {
+        return totalTime
+      }
+      const tripStartFloor = trip[0].currentFloor
+      const tripDirection = Direction.Calculate(trip[0].currentFloor, trip[0].destinationFloor)
+      // find the trip's destination floor: highest/lowest destination floor depending on trip direction
+      const tripDestinationFloor = trip.reduce((lastFloor, passenger) => (
+        (
+          tripDirection === Direction.DIRECTIONS.UP && passenger.destinationFloor > lastFloor
+        ) || (
+          tripDirection === Direction.DIRECTIONS.DOWN && passenger.destinationFloor < lastFloor
+        ) ? passenger.destinationFloor : lastFloor
+      ), trip[0].destinationFloor)
+      // pick-up & deliver passengers during the trip
+      const {
+        deliveredPassengers, pickedUpPassengers: pickedUpPassengersDuringDelivery, remainingPassengers
+      } = this.PickUpAndDeliverPassengersBetweenFloors(
+        trip,
+        tripStartFloor,
+        tripDestinationFloor,
+        pickedUpPassengers
+      )
+      pickedUpPassengers = pickedUpPassengers.concat(pickedUpPassengersDuringDelivery)
+      const stopTimeToDeliveryStartFloor = arrayUnique(
+        deliveredPassengers.concat(pickedUpPassengersDuringDelivery)
+      ).length * this.averageStopTime
+      const timeToDeliveryStartFloor = Math.abs(tripStartFloor - tripDestinationFloor) / this.speed
+      return totalTime + timeToDeliveryStartFloor + stopTimeToDeliveryStartFloor
+    }, totalTime)
+  }
+  
+  PickUpAndDeliverPassengersBetweenFloors(passengers, startFloor, destinationFloor, alreadyPickedUpPassengers) {
+    return passengers.reduce(
+      ({deliveredPassengers, pickedUpPassengers, remainingPassengers}, passenger) => {
+        // if passenger is delivered during the trip to the destination floor
+        if ((passenger.destinationFloor - startFloor) * (passenger.destinationFloor - destinationFloor) <= 0) {
+          deliveredPassengers.push(passenger)
+        } else {
+          // passenger is not dropped down during the trip to the destination floor
+          remainingPassengers.push(passenger)
+          // passenger is not dropped down but picked up during the trip to the destination floor
+          // if passenger was already picked up before, it's not pushed again to the picked-up passengers
+          const passengerAlreadyPickedUp = !alreadyPickedUpPassengers.includes(
+            pickedUpPassenger => pickedUpPassenger.id === passenger.id
+          )
+          if (
+            !passengerAlreadyPickedUp &&
+            (passenger.currentFloor - startFloor) * (passenger.currentFloor - destinationFloor) <= 0
+          ) {
+            pickedUpPassengers.push(passenger)
+          }
+        }
+        
+        return {deliveredPassengers, pickedUpPassengers, remainingPassengers}
+      },
+      {deliveredPassengers: [], pickedUpPassengers: [], remainingPassengers: []}
+    )
+  }
+  
+  ExtractFloors = passengers => passengers.reduce((floors, passenger) => {
+    floors.concat([passenger.currentFloor, passenger.destinationFloor])
+    return floors
+  }, [])
+  
   
   /**
    * Calculates the minimum time it takes to go to all destinations, beginning from the startFloor.

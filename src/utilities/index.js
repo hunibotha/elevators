@@ -21,3 +21,5 @@ export const getAllIndexes = (arr, val) => {
       indexes.push(i)
   return indexes
 }
+
+export const arrayUnique = array => [...new Set(array)]
